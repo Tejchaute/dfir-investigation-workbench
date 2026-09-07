@@ -1,15 +1,16 @@
 # DFIR Investigation Workbench
 
 DFIR Investigation Workbench is a planned local-first platform for preserving, analyzing, correlating,
-and reporting Windows forensic evidence. The repository is currently at **Phase 0: Project
-Foundation**. It contains runtime, storage, database, API, UI, logging, error-handling, and test
-infrastructure only. Case management and all forensic capabilities are planned and not implemented.
+and reporting Windows forensic evidence. The repository is currently at **Phase 1: Database and
+Core Domain Models**. It contains the persistent Case, Evidence, EvidenceHash,
+ChainOfCustodyEntry, and AuditEvent foundation. Workflows, APIs, and forensic capabilities remain
+planned and are not implemented.
 
 ## Stack
 
 - Backend: Python 3.12, FastAPI, Pydantic, SQLAlchemy 2.x, Alembic, psycopg, pytest
 - Frontend: React, TypeScript, Vite, Tailwind CSS, React Router, TanStack Query, Recharts
-- Database: PostgreSQL 17
+- Database: PostgreSQL 18
 - Deployment shape: Docker Compose modular monolith (frontend, backend, PostgreSQL)
 
 ## Local configuration
@@ -76,6 +77,21 @@ uv run alembic revision --autogenerate -m "describe schema change"
 
 There are intentionally no schema revisions in Phase 0. Application startup never calls
 `Base.metadata.create_all()`.
+
+Phase 1 introduces revision `0001_phase1_core`. It creates `cases`, `evidence`,
+`evidence_hashes`, `chain_of_custody_entries`, and `audit_events`. Relationships use restrictive
+foreign keys: parent deletion does not silently erase forensic records. Raw evidence remains on the
+filesystem and is never stored in these tables.
+
+PostgreSQL integration tests require a separate disposable database whose name contains `test`:
+
+```powershell
+$env:TEST_DATABASE_URL="postgresql+psycopg://USER:PASSWORD@localhost:5432/dfir_test"
+uv run pytest
+```
+
+The integration suite deliberately refuses to run migration downgrade tests against a database
+without `test` in its name.
 
 ## Repository areas
 
