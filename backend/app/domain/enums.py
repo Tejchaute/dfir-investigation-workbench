@@ -15,3 +15,23 @@ class EvidenceType(StrEnum):
     FILE = "FILE"
     DIRECTORY = "DIRECTORY"
     OTHER = "OTHER"
+
+
+class ArtifactType(StrEnum):
+    """Controlled artifact categories; REFERENCE is reserved for framework tests."""
+
+    REFERENCE = "REFERENCE"
+    EVTX = "EVTX"
+    REGISTRY = "REGISTRY"
+    PREFETCH = "PREFETCH"
+    LNK = "LNK"
+    NTFS = "NTFS"
+
+
+class ParserExecutionStatus(StrEnum):
+    PENDING = "PENDING"
+    RUNNING = "RUNNING"
+    COMPLETED = "COMPLETED"
+    COMPLETED_WITH_WARNINGS = "COMPLETED_WITH_WARNINGS"
+    FAILED = "FAILED"
+    UNSUPPORTED = "UNSUPPORTED"

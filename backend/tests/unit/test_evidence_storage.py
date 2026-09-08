@@ -70,6 +70,32 @@ def test_resolve_for_read_rejects_escape(tmp_path: Path) -> None:
         storage.resolve_for_read("../outside")
 
 
+def test_resolve_for_read_rejects_absolute_path_and_directory(tmp_path: Path) -> None:
+    root = tmp_path / "controlled"
+    directory = root / "directory"
+    directory.mkdir(parents=True)
+    storage = EvidenceStorage(root)
+    with pytest.raises(InfrastructureError, match="reference is invalid"):
+        storage.resolve_for_read(str((tmp_path / "outside.bin").resolve()))
+    with pytest.raises(InfrastructureError, match="file is unavailable"):
+        storage.resolve_for_read("directory")
+
+
+def test_resolve_for_read_rejects_symlink_escape_where_supported(tmp_path: Path) -> None:
+    root = tmp_path / "controlled"
+    root.mkdir()
+    outside = tmp_path / "outside.bin"
+    outside.write_bytes(b"outside")
+    link = root / "linked.bin"
+    try:
+        link.symlink_to(outside)
+    except OSError:
+        pytest.skip("symbolic links are not available to this Windows user")
+    storage = EvidenceStorage(root)
+    with pytest.raises(InfrastructureError, match="reference is invalid"):
+        storage.resolve_for_read("linked.bin")
+
+
 def test_database_failure_removes_completed_operation_file(tmp_path: Path) -> None:
     storage = EvidenceStorage(tmp_path / "controlled")
     service = EvidenceService(storage)

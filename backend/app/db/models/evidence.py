@@ -24,6 +24,7 @@ from app.db.models.mixins import TimestampMixin
 from app.domain.enums import EvidenceType
 
 if TYPE_CHECKING:
+    from app.db.models.artifact import Artifact
     from app.db.models.audit import AuditEvent
     from app.db.models.case import Case
     from app.db.models.custody import ChainOfCustodyEntry
@@ -72,6 +73,9 @@ class Evidence(TimestampMixin, Base):
         back_populates="evidence", passive_deletes=True
     )
     audit_events: Mapped[list[AuditEvent]] = relationship(
+        back_populates="evidence", passive_deletes=True
+    )
+    artifacts: Mapped[list[Artifact]] = relationship(
         back_populates="evidence", passive_deletes=True
     )
 

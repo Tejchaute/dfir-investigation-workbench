@@ -1,5 +1,5 @@
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import Sequence, func, select
 from sqlalchemy.exc import SQLAlchemyError
@@ -68,7 +68,7 @@ class CaseService:
         try:
             for field, value in changes.items():
                 setattr(case, field, value)
-            case.updated_at = datetime.now(UTC)
+            case.updated_at = self._next_updated_at(case.updated_at)
             session.add(
                 AuditEvent(
                     case_id=case.id,
@@ -126,7 +126,7 @@ class CaseService:
         try:
             previous_status = case.status
             case.status = target
-            case.updated_at = datetime.now(UTC)
+            case.updated_at = self._next_updated_at(case.updated_at)
             session.add(
                 AuditEvent(
                     case_id=case.id,
@@ -141,6 +141,11 @@ class CaseService:
         except SQLAlchemyError as error:
             session.rollback()
             raise InfrastructureError("Case lifecycle transition failed") from error
+
+    @staticmethod
+    def _next_updated_at(current: datetime) -> datetime:
+        now = datetime.now(UTC)
+        return now if now > current else current + timedelta(microseconds=1)
 
 
 case_service = CaseService()

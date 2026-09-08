@@ -1,10 +1,10 @@
 # DFIR Investigation Workbench
 
 DFIR Investigation Workbench is a planned local-first platform for preserving, analyzing, correlating,
-and reporting Windows forensic evidence. The repository is currently at **Phase 3: Evidence
-Integrity and Custody**. It contains the persistent core domain, Case lifecycle API, and controlled
-evidence registration and verification workflow. Artifact parsing and later forensic-analysis
-capabilities remain planned.
+and reporting Windows forensic evidence. The repository is currently at **Phase 4: Parser
+Framework**. It contains the persistent core domain, Case lifecycle API, controlled evidence
+registration and verification, and a reusable parser execution framework. Concrete artifact parsers
+and later forensic-analysis capabilities remain planned; Phase 4 contains no Windows artifact parser.
 
 ## Stack
 
@@ -64,6 +64,10 @@ GET  /api/evidence/{evidence_id}
 GET  /api/evidence/{evidence_id}/hashes
 GET  /api/evidence/{evidence_id}/coc
 POST /api/evidence/{evidence_id}/verify
+POST /api/evidence/{evidence_id}/parse
+GET  /api/evidence/{evidence_id}/artifacts?limit=25&offset=0
+GET  /api/artifacts/{artifact_id}
+GET  /api/artifacts/{artifact_id}/records?limit=25&offset=0
 ```
 
 Registration accepts multipart file content, evidence metadata, and a required real
@@ -141,6 +145,10 @@ without `test` in its name.
 
 Phase 2 adds revision `0002_case_number_sequence` for concurrency-safe case numbering.
 Phase 3 adds revision `0003_evidence_number_sequence` for concurrency-safe evidence numbering.
+Phase 4 adds revision `0004_parser_framework`, creating generic `artifacts` and `artifact_records`
+tables. Every parser run creates a new Artifact so earlier outputs remain auditable. Production has
+no registered concrete parsers until Phase 5 adds EVTX and Registry; Phase 6 later adds Prefetch,
+LNK, and NTFS.
 
 ## Repository areas
 
