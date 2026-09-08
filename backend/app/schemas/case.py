@@ -1,25 +1,35 @@
 import uuid
 from datetime import datetime
+from typing import Annotated
 
-from pydantic import Field
+from pydantic import ConfigDict, Field, StringConstraints, model_validator
 
 from app.domain.enums import CaseStatus
 from app.schemas.common import ReadSchema, TimezoneAwareSchema
 
+CaseName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=255)]
+
 
 class CaseCreate(TimezoneAwareSchema):
-    case_number: str = Field(min_length=1, max_length=100)
-    name: str = Field(min_length=1, max_length=255)
+    model_config = ConfigDict(extra="forbid")
+
+    name: CaseName
     description: str | None = None
     investigator: str | None = Field(default=None, max_length=255)
-    status: CaseStatus = CaseStatus.OPEN
 
 
 class CaseUpdate(TimezoneAwareSchema):
-    name: str | None = Field(default=None, min_length=1, max_length=255)
+    model_config = ConfigDict(extra="forbid")
+
+    name: CaseName | None = None
     description: str | None = None
     investigator: str | None = Field(default=None, max_length=255)
-    status: CaseStatus | None = None
+
+    @model_validator(mode="after")
+    def require_change(self) -> "CaseUpdate":
+        if not self.model_fields_set:
+            raise ValueError("at least one case field must be provided")
+        return self
 
 
 class CaseRead(ReadSchema):
@@ -31,3 +41,14 @@ class CaseRead(ReadSchema):
     status: CaseStatus
     created_at: datetime
     updated_at: datetime
+
+
+class PaginationMeta(ReadSchema):
+    limit: int
+    offset: int
+    total: int
+
+
+class CaseListResponse(ReadSchema):
+    data: list[CaseRead]
+    meta: PaginationMeta

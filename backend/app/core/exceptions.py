@@ -15,6 +15,11 @@ class NotFoundError(ApplicationError):
     code = "not_found"
 
 
+class ConflictError(ApplicationError):
+    status_code = 409
+    code = "conflict"
+
+
 class ProcessingError(ApplicationError):
     code = "processing_error"
 

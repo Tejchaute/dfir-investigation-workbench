@@ -1,10 +1,9 @@
 # DFIR Investigation Workbench
 
 DFIR Investigation Workbench is a planned local-first platform for preserving, analyzing, correlating,
-and reporting Windows forensic evidence. The repository is currently at **Phase 1: Database and
-Core Domain Models**. It contains the persistent Case, Evidence, EvidenceHash,
-ChainOfCustodyEntry, and AuditEvent foundation. Workflows, APIs, and forensic capabilities remain
-planned and are not implemented.
+and reporting Windows forensic evidence. The repository is currently at **Phase 2: Case
+Management**. It contains the persistent core domain and a Case lifecycle API. Evidence workflows
+and forensic capabilities remain planned and are not implemented.
 
 ## Stack
 
@@ -33,6 +32,26 @@ uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 The health endpoint is `GET http://localhost:8000/health`.
+
+### Case API
+
+```text
+POST  /api/cases
+GET   /api/cases?limit=25&offset=0
+GET   /api/cases/{case_id}
+PATCH /api/cases/{case_id}
+POST  /api/cases/{case_id}/close
+POST  /api/cases/{case_id}/archive
+```
+
+Case creation accepts `name`, `description`, and `investigator`. UUID, case number, timestamps, and
+initial `OPEN` status are controlled by the server. Updates accept only those three metadata fields.
+The lifecycle is strictly `OPEN → CLOSED → ARCHIVED`; invalid transitions return HTTP 409.
+
+Case numbers use `CASE-YYYY-NNNN`. PostgreSQL sequence `case_number_seq` allocates the numeric
+portion safely under concurrent requests. Sequence values are not rolled back, so gaps are expected
+after failed transactions. Lifecycle mutations and their audit events commit atomically. Until
+authentication exists, audit records use the explicit non-user actor `LOCAL_APPLICATION`.
 
 Run checks:
 
@@ -78,7 +97,7 @@ uv run alembic revision --autogenerate -m "describe schema change"
 There are intentionally no schema revisions in Phase 0. Application startup never calls
 `Base.metadata.create_all()`.
 
-Phase 1 introduces revision `0001_phase1_core`. It creates `cases`, `evidence`,
+Phase 1 introduced revision `0001_phase1_core`. It creates `cases`, `evidence`,
 `evidence_hashes`, `chain_of_custody_entries`, and `audit_events`. Relationships use restrictive
 foreign keys: parent deletion does not silently erase forensic records. Raw evidence remains on the
 filesystem and is never stored in these tables.
@@ -92,6 +111,8 @@ uv run pytest
 
 The integration suite deliberately refuses to run migration downgrade tests against a database
 without `test` in its name.
+
+Phase 2 adds revision `0002_case_number_sequence` for concurrency-safe case numbering.
 
 ## Repository areas
 
