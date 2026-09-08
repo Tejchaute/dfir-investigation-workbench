@@ -48,7 +48,7 @@ class CaseService:
         cases = list(
             session.scalars(
                 select(Case)
-                .order_by(Case.created_at.desc(), Case.id.desc())
+                .order_by(Case.created_at.desc(), Case.case_number.desc(), Case.id.desc())
                 .limit(limit)
                 .offset(offset)
             )

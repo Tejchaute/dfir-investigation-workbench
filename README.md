@@ -1,9 +1,10 @@
 # DFIR Investigation Workbench
 
 DFIR Investigation Workbench is a planned local-first platform for preserving, analyzing, correlating,
-and reporting Windows forensic evidence. The repository is currently at **Phase 2: Case
-Management**. It contains the persistent core domain and a Case lifecycle API. Evidence workflows
-and forensic capabilities remain planned and are not implemented.
+and reporting Windows forensic evidence. The repository is currently at **Phase 3: Evidence
+Integrity and Custody**. It contains the persistent core domain, Case lifecycle API, and controlled
+evidence registration and verification workflow. Artifact parsing and later forensic-analysis
+capabilities remain planned.
 
 ## Stack
 
@@ -18,8 +19,9 @@ Copy `.env.example` to `.env` at the repository root, then replace the developme
 the backend deliberately fails at startup if it is absent. The example storage roots point to
 `data/cases` for evidence and `data/exports` for generated reports. Keep these paths separate.
 
-The evidence mount is read-only inside Docker. Never place real evidence, secrets, or generated
-reports under version control.
+The Docker evidence mount is writable only so the backend can create its controlled storage copy.
+Application workflows never modify a registered copy. Never place real evidence, secrets, or
+generated reports under version control.
 
 ## Backend
 
@@ -52,6 +54,31 @@ Case numbers use `CASE-YYYY-NNNN`. PostgreSQL sequence `case_number_seq` allocat
 portion safely under concurrent requests. Sequence values are not rolled back, so gaps are expected
 after failed transactions. Lifecycle mutations and their audit events commit atomically. Until
 authentication exists, audit records use the explicit non-user actor `LOCAL_APPLICATION`.
+
+### Evidence API
+
+```text
+POST /api/cases/{case_id}/evidence
+GET  /api/cases/{case_id}/evidence?limit=25&offset=0
+GET  /api/evidence/{evidence_id}
+GET  /api/evidence/{evidence_id}/hashes
+GET  /api/evidence/{evidence_id}/coc
+POST /api/evidence/{evidence_id}/verify
+```
+
+Registration accepts multipart file content, evidence metadata, and a required real
+`custody_person`. It is allowed only for open cases. The application streams bytes into a
+server-generated path beneath `EVIDENCE_ROOT`, computes SHA-256 during the copy, records an
+`ACQUISITION` hash and initial custody entry, and never uses the submitted filename as a path.
+Evidence numbers use the PostgreSQL-backed `EVD-YYYY-NNNN` sequence format; gaps after rolled-back
+transactions are expected. Verification is read-only and records a distinct `VERIFICATION` hash.
+A mismatch is reported as `match=false` and is not characterized as tampering.
+
+Filesystem and database commits cannot form one native atomic transaction. Registration therefore
+finalizes a unique controlled file before committing metadata and removes only that new file if the
+database transaction fails. A process or host crash in that narrow interval can leave an orphaned
+file for later administrative reconciliation; it cannot create a completed database record pointing
+to a partial copy.
 
 Run checks:
 
@@ -113,6 +140,7 @@ The integration suite deliberately refuses to run migration downgrade tests agai
 without `test` in its name.
 
 Phase 2 adds revision `0002_case_number_sequence` for concurrency-safe case numbering.
+Phase 3 adds revision `0003_evidence_number_sequence` for concurrency-safe evidence numbering.
 
 ## Repository areas
 

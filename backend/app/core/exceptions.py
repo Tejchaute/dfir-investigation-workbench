@@ -10,6 +10,11 @@ class ValidationError(ApplicationError):
     code = "validation_error"
 
 
+class BadRequestError(ApplicationError):
+    status_code = 400
+    code = "bad_request"
+
+
 class NotFoundError(ApplicationError):
     status_code = 404
     code = "not_found"
