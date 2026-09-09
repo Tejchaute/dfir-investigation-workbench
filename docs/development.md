@@ -1,8 +1,7 @@
 # Development notes
 
 The authoritative product, architecture, and implementation constraints remain `PRD.md`,
-`architecture.md`, and `rules.md` at the repository root. Phase 0 establishes infrastructure only;
-no forensic behavior is implemented.
+`architecture.md`, and `rules.md` at the repository root.
 
 ## Phase 1 database entities
 
@@ -83,8 +82,42 @@ The execution service resolves evidence by UUID, requires an acquisition SHA-256
 controlled copy through `EvidenceStorage`, opens it read-only, selects an explicitly registered
 parser, persists the Artifact and records, and writes `PARSER_EXECUTED` through the existing audit
 system. No client path is accepted. The `REFERENCE` artifact category and reference parser are used
-only by isolated tests; production starts with no concrete parsers registered.
+only by isolated tests; Phase 5 production registration is described below.
 
-Phase 5 will explicitly register EVTX and Registry parsers. Phase 6 will add Prefetch, LNK, and NTFS
-parsers. Those parsers and all timeline, correlation, findings, reporting, and frontend integration
-remain outside Phase 4.
+## Phase 5 EVTX and Registry parsers
+
+Phase 5 explicitly registers `DFIR_EVTX` and `DFIR_REGISTRY`, both implementation version `1.0.0`,
+in the Phase 4 registry. It uses `python-evtx==0.8.1` and `python-registry==1.3.1`; both are
+Apache-2.0, offline, read-only format libraries with Python 3.12-compatible releases. No new schema
+is needed because both parsers emit the existing generic Artifact and ArtifactRecord models.
+
+The EVTX adapter validates the EVTX signature, memory-maps the controlled file read-only, traverses
+records in file order, and normalizes provider, event ID, channel, computer, level, task, opcode,
+keywords, version, record ID, structured EventData, and source XML. Malformed records and chunks
+become retained warnings when traversal can continue; an unreadable file is a failed result. An
+aware source timestamp populates `event_time` without local-time conversion. A naive timestamp is
+preserved as source text with `event_timestamp_timezone_known=false`, while `event_time` remains
+null so the application does not invent a timezone.
+
+The Registry adapter validates the `regf` signature and traverses an offline hive deterministically.
+It supports library-identified NTUSER, SYSTEM, and SOFTWARE hives; unknown identity is retained as
+`UNKNOWN` with a warning instead of being inferred from a filename. Key records preserve paths,
+parent paths, and key last-write timestamps. Value records preserve names, library value types,
+native structured values, raw bytes, and key provenance. Binary values use base64. Their preview is
+bounded to 4096 bytes while original byte length and full-value SHA-256 are retained. Registry key
+timestamps populate `event_time` only when timezone-aware; naive values are preserved as text and
+explicitly marked as lacking timezone information.
+
+Both parsers receive only the already-opened controlled read-only stream and evidence identifiers.
+They accept no client path, run no subprocess, do not dynamically load code, and never write to the
+evidence copy. Every run creates a new Artifact, retains warnings/errors and parser/library metadata,
+and writes the existing `PARSER_EXECUTED` audit event. Normalized records retain source identifiers
+and evidence provenance; no observation is converted into an investigative conclusion.
+
+Deterministic Apache-2.0 upstream regression fixtures are stored as gzip/base64 text and decoded
+only into pytest temporary directories. They contain no case data or forensic conclusions; their
+origins and hashes are documented beside the fixtures.
+
+Phase 5 is EVTX and generic Registry hive ingestion only. Phase 6 adds Prefetch, LNK, and NTFS;
+Phase 7 adds the Timeline Engine; Phase 8 adds Correlation and Findings. Reporting, frontend
+integration, authentication, and all higher-level interpretation remain outside Phase 5.

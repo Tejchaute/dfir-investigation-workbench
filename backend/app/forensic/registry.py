@@ -2,7 +2,9 @@ from collections.abc import Iterable
 
 from app.core.exceptions import ConflictError, ValidationError
 from app.domain.enums import ArtifactType
+from app.forensic.evtx import EvtxParser
 from app.forensic.parser import ForensicParser
+from app.forensic.registry_hive import RegistryHiveParser
 
 
 class ParserRegistry:
@@ -41,4 +43,4 @@ class ParserRegistry:
         return parser
 
 
-parser_registry = ParserRegistry()
+parser_registry = ParserRegistry([EvtxParser(), RegistryHiveParser()])
