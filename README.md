@@ -1,10 +1,12 @@
 # DFIR Investigation Workbench
 
 DFIR Investigation Workbench is a planned local-first platform for preserving, analyzing, correlating,
-and reporting Windows forensic evidence. The repository is currently at **Phase 5: EVTX + Registry**.
+and reporting Windows forensic evidence. The repository is currently at **Phase 6: Prefetch + LNK
++ NTFS/$MFT**.
 It contains the persistent core domain, Case lifecycle API, controlled evidence registration and
 verification, the reusable parser framework, and read-only offline EVTX and Registry hive parsers.
-Later artifact and forensic-analysis capabilities remain planned.
+It also includes focused Prefetch, Shell Link, and NTFS/$MFT parsers. Timeline construction and
+later forensic-analysis capabilities remain planned.
 
 ## Stack
 
@@ -148,7 +150,11 @@ Phase 3 adds revision `0003_evidence_number_sequence` for concurrency-safe evide
 Phase 4 adds revision `0004_parser_framework`, creating generic `artifacts` and `artifact_records`
 tables. Every parser run creates a new Artifact so earlier outputs remain auditable. Production has
 explicitly registered EVTX and Registry parsers in Phase 5. The Phase 4 generic schema represents
-both, so Phase 5 requires no migration. Phase 6 later adds Prefetch, LNK, and NTFS.
+both, so Phase 5 requires no migration. Phase 6 adds Prefetch, LNK, and focused NTFS/$MFT parsing.
+
+Phase 6 adds revision `0005_ntfs_mft_type`, extending the controlled artifact type constraint with
+`NTFS_MFT`. The generic parse endpoint now resolves production parsers for `PREFETCH`, `LNK`, and
+`NTFS_MFT`; no separate parser API or artifact storage model was introduced.
 
 ## Repository areas
 

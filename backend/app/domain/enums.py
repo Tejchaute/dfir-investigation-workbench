@@ -26,6 +26,7 @@ class ArtifactType(StrEnum):
     PREFETCH = "PREFETCH"
     LNK = "LNK"
     NTFS = "NTFS"
+    NTFS_MFT = "NTFS_MFT"
 
 
 class ParserExecutionStatus(StrEnum):

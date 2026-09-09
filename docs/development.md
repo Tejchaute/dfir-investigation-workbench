@@ -118,6 +118,52 @@ Deterministic Apache-2.0 upstream regression fixtures are stored as gzip/base64 
 only into pytest temporary directories. They contain no case data or forensic conclusions; their
 origins and hashes are documented beside the fixtures.
 
-Phase 5 is EVTX and generic Registry hive ingestion only. Phase 6 adds Prefetch, LNK, and NTFS;
-Phase 7 adds the Timeline Engine; Phase 8 adds Correlation and Findings. Reporting, frontend
-integration, authentication, and all higher-level interpretation remain outside Phase 5.
+Phase 5 is EVTX and generic Registry hive ingestion only.
+
+## Phase 6 Prefetch, LNK, and focused NTFS/$MFT parsing
+
+Phase 6 explicitly registers `DFIR_PREFETCH`, `DFIR_LNK`, and `DFIR_NTFS_MFT`, each at version
+`1.0.0`. They are focused Python structure parsers and add no runtime dependency, native extension,
+external executable, subprocess, network access, or dynamic loading. This keeps parsing offline and
+inside the Phase 4 read-only `ParserContext` boundary.
+
+The Prefetch parser supports uncompressed versions 17, 23, 26, 30, and 31. It preserves the
+application name, format version, executable hash, run count, all available execution FILETIMEs,
+referenced paths, and volume metadata. Compressed MAM Prefetch is recognized but returns
+`UNSUPPORTED`; decompression is intentionally not approximated. Optional damaged path or volume
+structures produce warnings when the core record remains usable. A 64 MiB structural limit prevents
+unbounded allocation; real Prefetch files are expected to be substantially smaller.
+
+The Shell Link parser follows MS-SHLLINK structures for the header, LinkTargetIDList, local or
+network LinkInfo, Unicode/ANSI StringData, VolumeID, CommonNetworkRelativeLink, and TrackerData. It
+preserves target metadata, three target timestamp fields, arguments, descriptions, volume/network
+information, and bounded Shell Item headers. Network targets are represented only; they are never
+resolved or accessed. Unknown Shell Item classes and damaged optional blocks produce warnings. LNK
+timestamps remain distinct metadata observations and are not described as execution times.
+
+The NTFS parser has two explicit input contracts. An MFT-record stream is parsed record by record
+using its declared record allocation size and update-sequence geometry. A raw NTFS volume yields
+boot geometry and the first MFT record at the boot-sector-defined MFT LCN. Raw-volume mode does not
+claim to enumerate a fragmented `$MFT`. Each FILE record requires a valid signature, record bounds,
+and update-sequence fixup. The parser recognizes attribute types and extracts
+`$STANDARD_INFORMATION`, `$FILE_NAME`, and resident/non-resident `$DATA` metadata. It preserves
+data-run allocation metadata but never reconstructs or recovers file content.
+
+NTFS `$STANDARD_INFORMATION` and `$FILE_NAME` creation, modification, MFT-change, and access
+timestamps remain separate, with both ISO UTC and raw FILETIME representations. No single “file
+timestamp” is selected, and no timestomping inference is made. LNK timestamp families likewise
+remain distinct. Prefetch execution history retains every nonzero source timestamp. `event_time` is
+used only where one source meaning is unambiguous; Phase 6 performs no timeline normalization.
+
+Revision `0005_ntfs_mft_type` adds the controlled `NTFS_MFT` value while retaining the earlier
+unimplemented `NTFS` category for compatibility. The downgrade maps any `NTFS_MFT` Artifact label
+back to `NTFS` before restoring the former check constraint. Artifact/ArtifactRecord tables remain
+the persistence model, and every rerun creates a new auditable Artifact.
+
+Deterministic binary fixture builders are documented in `backend/tests/fixtures/phase6`. They encode
+real format structures with generic synthetic values and no personal or sensitive evidence.
+
+Phase 6 does not implement timeline analysis, timestomping detection, correlation, findings,
+reporting, deleted-file recovery, file carving, or full NTFS reconstruction. Phase 7 adds the
+Timeline Engine; Phase 8 adds Correlation and Findings. Later-phase frontend and reporting work also
+remain outside Phase 6.

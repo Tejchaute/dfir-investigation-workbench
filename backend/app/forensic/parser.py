@@ -15,12 +15,13 @@ NonEmptyText = Annotated[str, StringConstraints(strip_whitespace=True, min_lengt
 
 @dataclass(frozen=True)
 class ParserContext:
-    """Controlled context containing a read-only evidence stream and identifiers."""
+    """Controlled context containing a read-only evidence stream and safe metadata."""
 
     evidence_id: uuid.UUID
     case_id: uuid.UUID
     evidence_type: EvidenceType
     source: BinaryIO
+    source_name: str | None = None
 
 
 class ParsedRecord(BaseModel):

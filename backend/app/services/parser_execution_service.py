@@ -42,6 +42,7 @@ class ParserExecutionService:
                     case_id=evidence.case_id,
                     evidence_type=evidence.evidence_type,
                     source=source,
+                    source_name=evidence.name,
                 )
                 raw_result = parser.parse(context)
             if not isinstance(raw_result, ParserResult):
