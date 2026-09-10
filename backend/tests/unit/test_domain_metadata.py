@@ -14,6 +14,7 @@ def test_domain_metadata_contains_expected_tables() -> None:
         "audit_events",
         "artifacts",
         "artifact_records",
+        "timeline_events",
     }
 
 

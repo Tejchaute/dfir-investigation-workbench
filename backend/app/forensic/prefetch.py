@@ -80,8 +80,11 @@ class PrefetchParser(ForensicParser):
         volume_count = uint32(data, 112)
         volumes = self._volumes(data, volume_offset, volume_count, version, warnings)
         execution_times, run_count = self._execution(data, version, warnings)
-        normalized_times = [item[0].isoformat() for item in execution_times if item[0] is not None]
-        raw_times = [item[1] for item in execution_times if item[1] is not None]
+        observed_times = [item for item in execution_times if item[1] is not None]
+        normalized_times = [
+            item[0].isoformat() if item[0] is not None else None for item in observed_times
+        ]
+        raw_times = [item[1] for item in observed_times]
         evidence_identifier = str(context.evidence_id)
         source_identifier = context.source_name or evidence_identifier
         return (

@@ -1,12 +1,12 @@
 # DFIR Investigation Workbench
 
 DFIR Investigation Workbench is a planned local-first platform for preserving, analyzing, correlating,
-and reporting Windows forensic evidence. The repository is currently at **Phase 6: Prefetch + LNK
-+ NTFS/$MFT**.
+and reporting Windows forensic evidence. The repository is currently at **Phase 7: Timeline Engine**.
 It contains the persistent core domain, Case lifecycle API, controlled evidence registration and
 verification, the reusable parser framework, and read-only offline EVTX and Registry hive parsers.
-It also includes focused Prefetch, Shell Link, and NTFS/$MFT parsers. Timeline construction and
-later forensic-analysis capabilities remain planned.
+It also includes focused Prefetch, Shell Link, and NTFS/$MFT parsers plus a persistent,
+provenance-preserving timeline normalization layer. Correlation and later forensic-analysis
+capabilities remain planned.
 
 ## Stack
 
@@ -70,6 +70,8 @@ POST /api/evidence/{evidence_id}/parse
 GET  /api/evidence/{evidence_id}/artifacts?limit=25&offset=0
 GET  /api/artifacts/{artifact_id}
 GET  /api/artifacts/{artifact_id}/records?limit=25&offset=0
+POST /api/cases/{case_id}/timeline/generate
+GET  /api/cases/{case_id}/timeline?limit=100&offset=0
 ```
 
 Registration accepts multipart file content, evidence metadata, and a required real
@@ -155,6 +157,11 @@ both, so Phase 5 requires no migration. Phase 6 adds Prefetch, LNK, and focused 
 Phase 6 adds revision `0005_ntfs_mft_type`, extending the controlled artifact type constraint with
 `NTFS_MFT`. The generic parse endpoint now resolves production parsers for `PREFETCH`, `LNK`, and
 `NTFS_MFT`; no separate parser API or artifact storage model was introduced.
+
+Phase 7 adds revision `0006_timeline_events`. The `timeline_events` table stores normalized
+observations with restrictive provenance foreign keys to Case, Evidence, Artifact, and
+ArtifactRecord. Generation is idempotent per source record, event type, timestamp source, and event
+ordinal. Re-parsing creates new ArtifactRecords and therefore new historical timeline observations.
 
 ## Repository areas
 

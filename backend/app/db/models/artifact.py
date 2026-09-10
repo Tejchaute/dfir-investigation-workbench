@@ -13,6 +13,7 @@ from app.domain.enums import ArtifactType, ParserExecutionStatus
 
 if TYPE_CHECKING:
     from app.db.models.evidence import Evidence
+    from app.db.models.timeline import TimelineEvent
 
 
 class Artifact(Base):
@@ -62,6 +63,9 @@ class Artifact(Base):
     records: Mapped[list[ArtifactRecord]] = relationship(
         back_populates="artifact", passive_deletes=True
     )
+    timeline_events: Mapped[list[TimelineEvent]] = relationship(
+        back_populates="artifact", passive_deletes=True
+    )
 
 
 class ArtifactRecord(Base):
@@ -86,3 +90,6 @@ class ArtifactRecord(Base):
     )
 
     artifact: Mapped[Artifact] = relationship(back_populates="records")
+    timeline_events: Mapped[list[TimelineEvent]] = relationship(
+        back_populates="artifact_record", passive_deletes=True
+    )

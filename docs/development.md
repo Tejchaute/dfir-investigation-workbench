@@ -167,3 +167,41 @@ Phase 6 does not implement timeline analysis, timestomping detection, correlatio
 reporting, deleted-file recovery, file carving, or full NTFS reconstruction. Phase 7 adds the
 Timeline Engine; Phase 8 adds Correlation and Findings. Later-phase frontend and reporting work also
 remain outside Phase 6.
+
+## Phase 7 Timeline Engine
+
+Phase 7 consumes persisted ArtifactRecords; it never reopens or reparses evidence. Explicit
+normalizers produce canonical `TimelineEvent` rows for EVTX event timestamps, Registry key
+LastWrite timestamps, every Prefetch execution-related timestamp, separate LNK creation/access/
+modification metadata timestamps, and all distinct NTFS `$STANDARD_INFORMATION` and `$FILE_NAME`
+creation/modification/MFT-change/access timestamps.
+
+Each event stores Case, Evidence, Artifact, and ArtifactRecord foreign keys together with parser
+identity, artifact and event types, normalized `event_time`, original `raw_time`, exact
+`time_source`, source-specific semantics, precision, description, selected correlation-ready
+metadata, and provenance identifiers. An aware source timestamp is retained without local-time
+conversion. A naive or semantically unknown timestamp retains its raw representation and leaves
+`event_time` null; no timezone is invented. Precision is recorded as second, millisecond,
+microsecond, 100ns, or unknown according to the source representation.
+
+The event vocabulary is observation-only: `EVTX_EVENT`, `REGISTRY_KEY_LAST_WRITE`,
+`PREFETCH_EXECUTION`, three LNK metadata event types, and eight distinct NTFS SI/FN event types.
+Descriptions use deterministic templates and contain no suspicion, intent, causality, or user
+attribution.
+
+`POST /api/cases/{case_id}/timeline/generate` scans the case's parsed records, inserts only missing
+logical events, reports bounded statistics and diagnostics, and records `TIMELINE_GENERATED` using
+the existing local application audit actor. Logical identity is enforced by the database across
+ArtifactRecord, event type, timestamp source, and event ordinal. Re-running generation does not
+duplicate events; a newly parsed Artifact remains a distinct historical source.
+
+`GET /api/cases/{case_id}/timeline` supports bounded `limit`/`offset` pagination plus start/end,
+event type, artifact type, evidence, and exact source-identifier filters. Ordering is explicit:
+event time ascending with nulls last, then stable provenance/type/ordinal/UUID tie-breakers.
+
+Revision `0006_timeline_events` creates the persistent timeline model, provenance constraints,
+indexes, and the idempotency constraint. All foreign keys use `ON DELETE RESTRICT`.
+
+Phase 7 does not perform correlation, findings, timestomping detection, suspiciousness scoring,
+maliciousness detection, user attribution, or causality analysis. Those analytical conclusions are
+outside the Timeline Engine; Phase 8 adds Correlation and Findings.

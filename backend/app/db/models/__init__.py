@@ -5,6 +5,7 @@ from app.db.models.audit import AuditEvent
 from app.db.models.case import Case
 from app.db.models.custody import ChainOfCustodyEntry
 from app.db.models.evidence import Evidence, EvidenceHash
+from app.db.models.timeline import TimelineEvent
 
 __all__ = [
     "Artifact",
@@ -14,4 +15,5 @@ __all__ = [
     "ChainOfCustodyEntry",
     "Evidence",
     "EvidenceHash",
+    "TimelineEvent",
 ]
