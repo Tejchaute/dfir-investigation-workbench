@@ -205,3 +205,19 @@ indexes, and the idempotency constraint. All foreign keys use `ON DELETE RESTRIC
 Phase 7 does not perform correlation, findings, timestomping detection, suspiciousness scoring,
 maliciousness detection, user attribution, or causality analysis. Those analytical conclusions are
 outside the Timeline Engine; Phase 8 adds Correlation and Findings.
+
+### EVTX process-identity compatibility metadata
+
+For Phase 8 compatibility, the EVTX timeline mapping recognizes only Windows Security Event 4688
+as a process-creation observation. When its structured EventData contains the exact
+`NewProcessName` field with a non-empty value, timeline metadata records a separator-normalized
+`process_path`, its deterministic Windows basename as `process_name`, and a
+`process_identity_source` object containing the original field name, original value, and event ID.
+No identity is inferred when the channel, event ID, field name, or value does not match this
+explicit contract.
+
+Timeline generation also applies the same extractor to pre-existing EVTX timeline rows and enriches
+only their metadata. This backfill is idempotent and does not modify timestamps, timestamp
+semantics, provenance, ArtifactRecords, evidence hashes, or custody history. The extracted identity
+is a source observation; it does not establish user intent, maliciousness, or causality. Broader
+process-creation normalization is outside this compatibility correction.

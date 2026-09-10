@@ -109,6 +109,12 @@ def _seed(session: Session) -> tuple[str, int]:
                 "channel": "Security",
                 "computer": "HOST",
                 "level": 4,
+                "event_data": [
+                    {
+                        "name": "NewProcessName",
+                        "value": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+                    }
+                ],
             },
             datetime(2026, 1, 2, 3, 4, 5, 123000, tzinfo=UTC),
         ),
@@ -362,3 +368,69 @@ def test_timeline_api_validation_and_missing_case(
         f"/api/cases/{CASE_ID}/timeline", params={"start_time": "2026-01-01T00:00:00"}
     )
     assert naive.status_code == 422
+
+
+def test_existing_evtx_timeline_identity_backfill_is_idempotent_and_non_destructive(
+    timeline_client: TestClient, timeline_session: Session
+) -> None:
+    digest_before, custody_before = _seed(timeline_session)
+    generated = timeline_client.post(f"/api/cases/{CASE_ID}/timeline/generate")
+    assert generated.status_code == 200
+    event = timeline_session.scalar(
+        select(TimelineEvent).where(TimelineEvent.event_type == "EVTX_EVENT")
+    )
+    assert event is not None
+    event.metadata_ = {
+        key: value
+        for key, value in event.metadata_.items()
+        if key not in {"process_path", "process_name", "process_identity_source"}
+    }
+    timeline_session.commit()
+    original_time = event.event_time
+    original_raw_time = event.raw_time
+    original_time_source = event.time_source
+    original_semantics = event.time_semantics
+    original_provenance = dict(event.provenance)
+
+    first = timeline_client.post(f"/api/cases/{CASE_ID}/timeline/generate")
+    assert first.status_code == 200
+    timeline_session.refresh(event)
+    enriched_metadata = dict(event.metadata_)
+    expected_path = "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
+    assert enriched_metadata["process_name"] == "powershell.exe"
+    assert enriched_metadata["process_path"] == expected_path
+    assert enriched_metadata["process_identity_source"] == {
+        "field": "NewProcessName",
+        "value": expected_path,
+        "event_id": 4688,
+    }
+    assert event.event_time == original_time
+    assert event.raw_time == original_raw_time
+    assert event.time_source == original_time_source
+    assert event.time_semantics == original_semantics
+    assert event.provenance == original_provenance
+
+    second = timeline_client.post(f"/api/cases/{CASE_ID}/timeline/generate")
+    assert second.status_code == 200
+    timeline_session.refresh(event)
+    assert event.metadata_ == enriched_metadata
+    assert event.event_time == original_time
+    assert event.raw_time == original_raw_time
+    assert event.time_source == original_time_source
+    assert event.time_semantics == original_semantics
+    assert event.provenance == original_provenance
+    assert timeline_session.scalar(select(func.count()).select_from(TimelineEvent)) == 15
+    assert (
+        timeline_session.scalar(
+            select(EvidenceHash.digest).where(EvidenceHash.evidence_id == EVIDENCE_ID)
+        )
+        == digest_before
+    )
+    assert (
+        timeline_session.scalar(
+            select(func.count())
+            .select_from(ChainOfCustodyEntry)
+            .where(ChainOfCustodyEntry.evidence_id == EVIDENCE_ID)
+        )
+        == custody_before
+    )

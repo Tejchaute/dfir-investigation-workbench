@@ -15,7 +15,7 @@ from app.core.exceptions import InfrastructureError, NotFoundError, ValidationEr
 from app.db.models import Artifact, ArtifactRecord, AuditEvent, Case, Evidence, TimelineEvent
 from app.domain.enums import ArtifactType, TimelineEventType
 from app.services.case_service import LOCAL_AUDIT_ACTOR
-from app.services.timeline_normalizer import timeline_normalizer
+from app.services.timeline_normalizer import extract_evtx_process_identity, timeline_normalizer
 
 SelectType = TypeVar("SelectType")
 logger = logging.getLogger(__name__)
@@ -125,6 +125,7 @@ class TimelineService:
                     .returning(timeline_table.c.id)
                 )
                 created = len(list(session.scalars(statement)))
+            self._backfill_evtx_process_identity(session, case_id)
             skipped = len(values) - created + records_without_events
             session.add(
                 AuditEvent(
@@ -157,6 +158,26 @@ class TimelineService:
             warnings=warnings,
             unsupported_artifact_types=unsupported,
         )
+
+    @staticmethod
+    def _backfill_evtx_process_identity(session: Session, case_id: uuid.UUID) -> None:
+        rows = session.execute(
+            select(TimelineEvent, ArtifactRecord)
+            .join(ArtifactRecord, TimelineEvent.artifact_record_id == ArtifactRecord.id)
+            .where(
+                TimelineEvent.case_id == case_id,
+                TimelineEvent.artifact_type == ArtifactType.EVTX,
+                TimelineEvent.event_type == TimelineEventType.EVTX_EVENT,
+            )
+            .order_by(TimelineEvent.id.asc())
+        )
+        for event, record in rows:
+            identity = extract_evtx_process_identity(record.data)
+            if not identity:
+                continue
+            enriched = {**event.metadata_, **identity}
+            if enriched != event.metadata_:
+                event.metadata_ = enriched
 
     def list_events(
         self,

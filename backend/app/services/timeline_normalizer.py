@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import PureWindowsPath
 
 from app.db.models import Artifact, ArtifactRecord
 from app.domain.enums import ArtifactType, TimelineEventType, TimestampPrecision
@@ -55,6 +56,7 @@ class TimelineNormalizer:
             return NormalizationResult(warnings=("EVTX record has no source event timestamp",))
         event_id = data.get("event_id")
         channel = _string(data.get("channel")) or "unknown channel"
+        process_identity = extract_evtx_process_identity(data)
         return NormalizationResult(
             events=(
                 NormalizedTimelineEvent(
@@ -74,6 +76,7 @@ class TimelineNormalizer:
                         "channel": data.get("channel"),
                         "computer": data.get("computer"),
                         "level": data.get("level"),
+                        **process_identity,
                     },
                     provenance=dict(record.provenance),
                 ),
@@ -299,6 +302,33 @@ class TimelineNormalizer:
                 )
             )
         return events
+
+
+def extract_evtx_process_identity(data: dict[str, object]) -> dict[str, object]:
+    """Extract only the explicitly supported Security 4688 process identity."""
+    channel = _string(data.get("channel"))
+    if data.get("event_id") != 4688 or channel is None or channel.casefold() != "security":
+        return {}
+    for item in _dict_list(data.get("event_data")):
+        if item.get("name") != "NewProcessName":
+            continue
+        original_value = _string(item.get("value"))
+        if original_value is None or not original_value.strip():
+            return {}
+        process_path = original_value.strip().replace("/", "\\")
+        process_name = PureWindowsPath(process_path).name
+        if not process_name:
+            return {}
+        return {
+            "process_path": process_path,
+            "process_name": process_name,
+            "process_identity_source": {
+                "field": "NewProcessName",
+                "value": original_value,
+                "event_id": 4688,
+            },
+        }
+    return {}
 
 
 def _aware(value: datetime | None) -> datetime | None:

@@ -54,6 +54,12 @@ def test_evtx_mapping_preserves_timestamp_precision_and_provenance() -> None:
             "channel": "Security",
             "computer": "HOST",
             "level": 4,
+            "event_data": [
+                {
+                    "name": "NewProcessName",
+                    "value": "C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+                }
+            ],
         },
         datetime(2026, 1, 2, 3, 4, 5, 123456, tzinfo=UTC),
     )
@@ -64,7 +70,58 @@ def test_evtx_mapping_preserves_timestamp_precision_and_provenance() -> None:
     assert event.time_source == "evtx.system.time_created"
     assert event.timestamp_precision is TimestampPrecision.HUNDRED_NANOSECOND
     assert event.metadata["event_id"] == 4688
+    assert event.metadata["process_path"] == (
+        "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
+    )
+    assert event.metadata["process_name"] == "powershell.exe"
+    assert event.metadata["process_identity_source"] == {
+        "field": "NewProcessName",
+        "value": "C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+        "event_id": 4688,
+    }
     assert event.provenance == {"source_offset": 42}
+
+
+def test_evtx_process_identity_is_not_fabricated_or_generically_discovered() -> None:
+    missing = (
+        TimelineNormalizer()
+        .normalize(
+            _artifact(ArtifactType.EVTX),
+            _record(
+                "EVTX_EVENT",
+                {
+                    "event_timestamp": "2026-01-01T00:00:00Z",
+                    "event_id": 4688,
+                    "channel": "Security",
+                    "event_data": [{"name": "Image", "value": "C:\\Tools\\other.exe"}],
+                },
+            ),
+        )
+        .events[0]
+    )
+    assert "process_path" not in missing.metadata
+    assert "process_name" not in missing.metadata
+
+    unrelated = (
+        TimelineNormalizer()
+        .normalize(
+            _artifact(ArtifactType.EVTX),
+            _record(
+                "EVTX_EVENT",
+                {
+                    "event_timestamp": "2026-01-01T00:00:00Z",
+                    "event_id": 1,
+                    "channel": "Security",
+                    "event_data": [
+                        {"name": "NewProcessName", "value": "C:\\Tools\\not-process-creation.exe"}
+                    ],
+                },
+            ),
+        )
+        .events[0]
+    )
+    assert "process_path" not in unrelated.metadata
+    assert "process_name" not in unrelated.metadata
 
 
 def test_registry_maps_only_key_last_write_and_preserves_naive_time() -> None:

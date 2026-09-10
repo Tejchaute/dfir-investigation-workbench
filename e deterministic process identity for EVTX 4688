@@ -1,0 +1,5 @@
+warning: in the working copy of 'backend/app/services/timeline_normalizer.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/app/services/timeline_service.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/tests/integration/test_timeline_api.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/tests/unit/test_timeline_normalizer.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/development.md', LF will be replaced by CRLF the next time Git touches it
