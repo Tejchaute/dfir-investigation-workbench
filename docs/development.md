@@ -221,3 +221,65 @@ only their metadata. This backfill is idempotent and does not modify timestamps,
 semantics, provenance, ArtifactRecords, evidence hashes, or custody history. The extracted identity
 is a source observation; it does not establish user intent, maliciousness, or causality. Broader
 process-creation normalization is outside this compatibility correction.
+
+## Phase 8 deterministic correlation and findings
+
+Phase 8 is a derived analytical layer over persisted TimelineEvents. It does not read evidence,
+invoke parsers, change ArtifactRecords, or rewrite timeline observations. Explicit versioned rules
+produce structured CorrelationMatches, and each new match produces one examiner-reviewable
+Finding. Correlation is not causation; findings do not establish maliciousness, attacker identity,
+user intent, or guilt.
+
+The active rule-set version is `1.0.0`, with a fixed inclusive temporal window of plus or minus 300
+seconds:
+
+- `CORR-EVTX-PREFETCH-001` version `1.0.0` matches a Security 4688 `process_name` to the exact,
+  case-insensitive Prefetch `application_name` basename.
+- `CORR-LNK-EVTX-001` version `1.0.0` matches a Security 4688 process path to an LNK target by exact
+  normalized Windows path when possible, otherwise by an explicitly recorded exact basename.
+- `CORR-NTFS-EVTX-001` version `1.0.0` matches a Security 4688 process identity to NTFS metadata by
+  exact normalized full path when present, otherwise by an explicitly recorded exact filename.
+- `CORR-REGISTRY-EVTX-001` version `1.0.0` is registered but currently produces no matches. Registry
+  timeline metadata contains a hive and key path, not an explicit executable identity. Arbitrary
+  Registry key names are deliberately not mapped to processes.
+
+Windows identity normalization trims surrounding whitespace, converts separators to backslashes,
+normalizes path syntax without filesystem access, and compares case-insensitively. It performs no
+substring, fuzzy, token-overlap, environment expansion, or network/filesystem resolution.
+
+Every match records its rule ID/version, exact pair of TimelineEvents through
+`correlation_match_events`, event roles, matched fields, match basis, signed and absolute temporal
+distance, configured window, normalized identity, and deterministic explanation. The logical key
+is SHA-256 over case, rule ID/version, sorted timeline-event IDs, match basis, and normalized
+identity. The related Finding key derives from that match key. A second run creates a new
+CorrelationRun but no duplicate logical matches or findings; a new TimelineEvent lineage remains
+distinct.
+
+Severity prioritizes the analytical relationship's potential review importance and is not a guilt
+or maliciousness score. Initial corroboration is conservatively `MEDIUM`; LNK/NTFS associations are
+`LOW`. Confidence describes the deterministic relationship, not a probability: exact paths use
+`HIGH`, exact basenames use `MEDIUM`, and `LOW` is reserved for future explicitly weaker rules.
+
+Findings begin `OPEN`. Valid transitions are `OPEN → REVIEWED`, `OPEN → DISMISSED`,
+`REVIEWED → RESOLVED`, and `REVIEWED → DISMISSED`; resolved and dismissed findings are terminal.
+Status, severity, confidence, and analyst notes are review metadata. Rule identity, correlation
+match, supporting TimelineEvents, and original analytical content remain immutable.
+
+API surface:
+
+```text
+POST  /api/cases/{case_id}/correlation/run
+GET   /api/cases/{case_id}/correlations
+GET   /api/cases/{case_id}/findings
+GET   /api/findings/{finding_id}
+PATCH /api/findings/{finding_id}
+```
+
+`CORRELATION_RUN`, `FINDING_CREATED`, `FINDING_UPDATED`, and `FINDING_STATUS_CHANGED` use the
+existing audit log and `LOCAL_APPLICATION` actor. Revision `0007_correlation_findings` creates
+`correlation_runs`, `correlation_matches`, `correlation_match_events`, and `findings`, using
+restrictive foreign keys and normalized TimelineEvent provenance links.
+
+Findings are analytical outputs requiring examiner review. Phase 8 does not implement reporting,
+PDF generation, frontend integration, AI/ML analysis, malware classification, user/attacker
+attribution, or timestomping detection.

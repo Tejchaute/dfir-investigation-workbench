@@ -1,12 +1,13 @@
 # DFIR Investigation Workbench
 
 DFIR Investigation Workbench is a planned local-first platform for preserving, analyzing, correlating,
-and reporting Windows forensic evidence. The repository is currently at **Phase 7: Timeline Engine**.
+and reporting Windows forensic evidence. The repository is currently at **Phase 8: Correlation +
+Findings**.
 It contains the persistent core domain, Case lifecycle API, controlled evidence registration and
 verification, the reusable parser framework, and read-only offline EVTX and Registry hive parsers.
 It also includes focused Prefetch, Shell Link, and NTFS/$MFT parsers plus a persistent,
-provenance-preserving timeline normalization layer. Correlation and later forensic-analysis
-capabilities remain planned.
+provenance-preserving timeline normalization layer. A small deterministic rule set produces
+evidence-backed findings; reporting and frontend integration remain planned.
 
 ## Stack
 
@@ -72,6 +73,11 @@ GET  /api/artifacts/{artifact_id}
 GET  /api/artifacts/{artifact_id}/records?limit=25&offset=0
 POST /api/cases/{case_id}/timeline/generate
 GET  /api/cases/{case_id}/timeline?limit=100&offset=0
+POST /api/cases/{case_id}/correlation/run
+GET  /api/cases/{case_id}/correlations?limit=25&offset=0
+GET  /api/cases/{case_id}/findings?limit=25&offset=0
+GET  /api/findings/{finding_id}
+PATCH /api/findings/{finding_id}
 ```
 
 Registration accepts multipart file content, evidence metadata, and a required real
@@ -162,6 +168,11 @@ Phase 7 adds revision `0006_timeline_events`. The `timeline_events` table stores
 observations with restrictive provenance foreign keys to Case, Evidence, Artifact, and
 ArtifactRecord. Generation is idempotent per source record, event type, timestamp source, and event
 ordinal. Re-parsing creates new ArtifactRecords and therefore new historical timeline observations.
+
+Phase 8 adds revision `0007_correlation_findings`, creating correlation runs, deterministic
+matches, normalized match-to-timeline-event links, and examiner-reviewable findings. Correlation
+consumes TimelineEvents only; it never reads evidence or invokes parsers. Repeated runs preserve run
+history without duplicating the same versioned logical match or finding.
 
 ## Repository areas
 

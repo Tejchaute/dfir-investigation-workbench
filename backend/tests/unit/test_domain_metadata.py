@@ -15,6 +15,10 @@ def test_domain_metadata_contains_expected_tables() -> None:
         "artifacts",
         "artifact_records",
         "timeline_events",
+        "correlation_runs",
+        "correlation_matches",
+        "correlation_match_events",
+        "findings",
     }
 
 
