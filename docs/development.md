@@ -283,3 +283,51 @@ restrictive foreign keys and normalized TimelineEvent provenance links.
 Findings are analytical outputs requiring examiner review. Phase 8 does not implement reporting,
 PDF generation, frontend integration, AI/ML analysis, malware classification, user/attacker
 attribution, or timestomping detection.
+
+## Phase 9 forensic reporting
+
+Phase 9 is a read-only presentation layer over persisted case, evidence, custody, artifact,
+timeline, correlation, finding, and audit records. It never opens evidence or invokes a parser. The
+snapshot builder performs all database reads and produces a frozen `ReportSnapshot`; JSON, HTML,
+and PDF renderers consume only that snapshot. Sections are always rendered in this order: Report
+Identification, Case Information, Evidence Inventory, Evidence Integrity, Chain of Custody,
+Artifact Summary, Timeline Reconstruction, Correlation Analysis, Findings, Methodology,
+Limitations, and Audit Summary.
+
+The report type is `FORENSIC_INVESTIGATION_REPORT`; the explicit schema and renderer version is
+`DFIR_REPORT 1.0.0`. The generator is `LOCAL_APPLICATION`, because authentication is not present.
+The Case model has no dedicated closed/archive timestamp and Evidence has no acquisition-method
+field. Reports therefore derive lifecycle times only from existing audit observations and leave
+unavailable acquisition information null rather than inventing it. Internal evidence storage paths
+are not exported.
+
+Canonical JSON uses UTF-8, sorted keys, compact separators, and explicit deterministic ordering for
+every collection. HTML is self-contained, escapes untrusted values, and loads no remote resources.
+PDF uses local ReportLab rendering, page numbering, wrapped values, and invariant output settings.
+All formats derive from the same snapshot. Each report retains a canonical `snapshot.json` sidecar
+so the historical rendered artifact can be reproduced without querying later mutable case state.
+
+Exports use generated UUID path components under
+`REPORT_ROOT/cases/{case_id}/{report_id}`. The storage boundary rejects absolute/traversing stored
+references, symlinks on download, root overlap with `EVIDENCE_ROOT`, and existing destinations.
+The report row stores the canonical snapshot SHA-256. The report-artifact row stores the rendered
+file's separate SHA-256 and byte count. These values are `REPORT_ARTIFACT_SHA256` integrity values,
+not evidence hashes.
+
+Report APIs:
+
+```text
+POST /api/cases/{case_id}/reports
+GET  /api/cases/{case_id}/reports
+GET  /api/reports/{report_id}
+GET  /api/reports/{report_id}/download
+```
+
+`REPORT_GENERATED` is written through the existing audit system with bounded identifiers and no
+report content. Audit summaries include at most 500 selected lifecycle/processing actions.
+Findings retain their stored language; reports add no AI summary, maliciousness classification,
+causality claim, attacker/user attribution, or new forensic conclusion. Correlation remains an
+association, basename matches remain less specific than full paths, Registry/process association
+may remain unsupported, null timeline timestamps remain last and identifiable, and focused MFT
+analysis is not complete NTFS reconstruction. Absence of a finding does not establish absence of
+activity.

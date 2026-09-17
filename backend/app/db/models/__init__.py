@@ -11,6 +11,7 @@ from app.db.models.correlation import (
 )
 from app.db.models.custody import ChainOfCustodyEntry
 from app.db.models.evidence import Evidence, EvidenceHash
+from app.db.models.report import Report, ReportArtifact
 from app.db.models.timeline import TimelineEvent
 
 __all__ = [
@@ -26,4 +27,6 @@ __all__ = [
     "EvidenceHash",
     "Finding",
     "TimelineEvent",
+    "Report",
+    "ReportArtifact",
 ]

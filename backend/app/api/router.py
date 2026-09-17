@@ -5,6 +5,8 @@ from app.api.routes.cases import router as cases_router
 from app.api.routes.correlation import case_router as correlation_case_router
 from app.api.routes.correlation import finding_router
 from app.api.routes.evidence import case_evidence_router, evidence_router
+from app.api.routes.reports import case_router as report_case_router
+from app.api.routes.reports import report_router
 from app.api.routes.timeline import router as timeline_router
 
 router = APIRouter()
@@ -23,3 +25,5 @@ router.include_router(artifact_router, prefix="/api")
 router.include_router(timeline_router, prefix="/api")
 router.include_router(correlation_case_router, prefix="/api")
 router.include_router(finding_router, prefix="/api")
+router.include_router(report_case_router, prefix="/api")
+router.include_router(report_router, prefix="/api")

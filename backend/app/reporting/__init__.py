@@ -1,1 +1,1 @@
-"""Report generation modules will live here."""
+"""Deterministic forensic report snapshot and rendering infrastructure."""

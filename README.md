@@ -174,6 +174,12 @@ matches, normalized match-to-timeline-event links, and examiner-reviewable findi
 consumes TimelineEvents only; it never reads evidence or invokes parsers. Repeated runs preserve run
 history without duplicating the same versioned logical match or finding.
 
+Phase 9 adds revision `0008_reporting_engine`, creating immutable report metadata and rendered
+artifact records. `POST /api/cases/{case_id}/reports` renders JSON, self-contained HTML, or PDF from
+one frozen `DFIR_REPORT 1.0.0` snapshot. Report files and their canonical snapshot sidecars are
+stored under `REPORT_ROOT`, separately from evidence, and each rendered artifact has its own
+SHA-256 value explicitly representing the report artifact rather than source evidence.
+
 ## Repository areas
 
 - `backend/app/api`, `core`, `db`, `schemas`, `services`, `forensic`, `reporting`: intentional backend boundaries
