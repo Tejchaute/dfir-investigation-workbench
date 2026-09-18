@@ -1,13 +1,11 @@
 # DFIR Investigation Workbench
 
-DFIR Investigation Workbench is a planned local-first platform for preserving, analyzing, correlating,
-and reporting Windows forensic evidence. The repository is currently at **Phase 8: Correlation +
-Findings**.
-It contains the persistent core domain, Case lifecycle API, controlled evidence registration and
-verification, the reusable parser framework, and read-only offline EVTX and Registry hive parsers.
-It also includes focused Prefetch, Shell Link, and NTFS/$MFT parsers plus a persistent,
-provenance-preserving timeline normalization layer. A small deterministic rule set produces
-evidence-backed findings; reporting and frontend integration remain planned.
+DFIR Investigation Workbench is a local-first application for preserving, analyzing, correlating,
+and reporting Windows forensic evidence. It provides case management, controlled evidence
+registration and SHA-256 verification, chain of custody, a reusable parser framework, and read-only
+offline EVTX, Registry, Prefetch, Shell Link, and focused NTFS/$MFT parsing. Persisted parser records
+feed a provenance-preserving timeline, deterministic correlation rules, evidence-backed findings,
+analyst review, and immutable JSON, HTML, and PDF reports through an integrated React workspace.
 
 ## Stack
 

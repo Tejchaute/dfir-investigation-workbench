@@ -32,3 +32,11 @@ data/samples/**
 reports/
 !frontend/src/components/reports/
 !frontend/src/components/reports/**
+
+# Local forensic runtime/test data
+backend/data/cases/**
+backend/data/exports/**
+backend/data/samples/**
+
+# Local agent/skill files
+.agents/
