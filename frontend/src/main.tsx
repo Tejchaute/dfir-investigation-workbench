@@ -5,7 +5,16 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from './App'
 import './styles/index.css'
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      retry: (failureCount, error) =>
+        !(error instanceof Error && 'status' in error && error.status === 404) && failureCount < 2,
+    },
+    mutations: { retry: false },
+  },
+})
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -16,4 +25,3 @@ createRoot(document.getElementById('root')!).render(
     </QueryClientProvider>
   </StrictMode>,
 )
-

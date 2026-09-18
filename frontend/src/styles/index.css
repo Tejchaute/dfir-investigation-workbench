@@ -3,6 +3,69 @@
 @tailwind utilities;
 
 @layer base {
-  body { @apply m-0 min-w-80 bg-slate-950 font-sans antialiased; }
+  :root {
+    color-scheme: dark;
+    --surface-canvas: 5 9 15;
+    --surface-base: 9 14 22;
+    --surface-raised: 14 21 32;
+    --surface-overlay: 19 28 42;
+    --surface-inset: 7 12 19;
+    --border-subtle: 35 48 65;
+    --border-strong: 61 78 99;
+    --text-primary: 231 237 244;
+    --text-secondary: 166 180 197;
+    --text-muted: 112 129 149;
+    --accent: 56 189 248;
+    --accent-strong: 14 165 233;
+    --focus: 125 211 252;
+    --success: 74 222 128;
+    --warning: 251 191 36;
+    --danger: 248 113 113;
+    --info: 96 165 250;
+    --severity-info: 96 165 250;
+    --severity-low: 45 212 191;
+    --severity-medium: 251 191 36;
+    --severity-high: 251 146 60;
+    --severity-critical: 248 113 113;
+    --confidence-low: 148 163 184;
+    --confidence-medium: 56 189 248;
+    --confidence-high: 74 222 128;
+    --status-open: 74 222 128;
+    --status-closed: 148 163 184;
+    --status-archived: 167 139 250;
+    --integrity-match: 74 222 128;
+    --integrity-mismatch: 248 113 113;
+    --integrity-unknown: 148 163 184;
+    --parser-running: 56 189 248;
+    --parser-warning: 251 191 36;
+    --parser-failed: 248 113 113;
+    --parser-complete: 74 222 128;
+  }
+
+  * { @apply border-border-subtle; }
+  html { @apply bg-surface-canvas; }
+  body { @apply m-0 min-w-80 bg-surface-canvas font-sans text-base text-text-primary antialiased; }
+  button, input, select, textarea { font: inherit; }
+  :focus-visible { @apply outline-none ring-2 ring-focus ring-offset-2 ring-offset-surface-canvas; }
+  ::selection { @apply bg-accent/25 text-text-primary; }
 }
 
+@layer utilities {
+  .forensic-mono { @apply font-mono tabular-nums tracking-tight; overflow-wrap: anywhere; }
+  .scrollbar-forensic { scrollbar-color: rgb(var(--border-strong)) rgb(var(--surface-base)); scrollbar-width: thin; }
+}
+
+@layer components {
+  .field-input {
+    @apply min-h-10 w-full rounded-md border border-border-subtle bg-surface-inset px-3 py-2 text-base text-text-primary placeholder:text-text-muted hover:border-border-strong focus:border-accent sm:text-sm;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,7 @@
+import { GitCompareArrows } from 'lucide-react'
+import { Badge, MonospaceValue, TimestampValue } from '..'
+import type { CorrelationMatchRecord } from '../../types'
+
+export function CorrelationMatchRow({ match, selected, onSelect }: { match: CorrelationMatchRecord; selected: boolean; onSelect: () => void }) {
+  return <li><button type="button" aria-pressed={selected} onClick={onSelect} className="group grid w-full min-w-0 gap-3 rounded-md border border-border-subtle bg-surface-base p-3 text-left transition-colors hover:border-accent/50 hover:bg-surface-raised focus-visible:border-focus sm:grid-cols-[minmax(0,1fr)_auto]"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><GitCompareArrows aria-hidden="true" className="size-4 shrink-0 text-accent" /><MonospaceValue className="font-semibold text-text-primary">{match.rule_id}</MonospaceValue><Badge>v{match.rule_version}</Badge></div><p className="mt-2 break-words text-sm text-text-secondary">{match.explanation}</p><div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-text-muted"><span>Basis: <span className="font-mono text-text-secondary">{match.match_basis}</span></span><span>Delta: <span className="font-mono text-text-secondary">{match.temporal_delta_seconds}s</span></span><span>{match.supporting_events.length} matched events</span></div></div><div className="min-w-0 sm:text-right"><TimestampValue value={match.created_at} /><MonospaceValue className="mt-2 block max-w-48 truncate text-xs" title={match.id}>{match.id}</MonospaceValue></div></button></li>
+}

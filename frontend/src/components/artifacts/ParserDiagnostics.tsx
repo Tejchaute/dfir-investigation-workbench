@@ -1,0 +1,6 @@
+import { AlertTriangle, CircleX } from 'lucide-react'
+
+export function ParserDiagnostics({ warnings, errors }: { warnings: string[]; errors: string[] }) {
+  if (!warnings.length && !errors.length) return <p className="text-sm text-text-muted">No parser warnings or errors were recorded.</p>
+  return <div className="space-y-4">{warnings.length > 0 && <section aria-labelledby="parser-warnings"><h3 id="parser-warnings" className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-warning"><AlertTriangle aria-hidden="true" className="size-4" />Parser warnings · {warnings.length}</h3><ol className="mt-2 space-y-2">{warnings.map((warning, index) => <li key={`${index}-${warning}`} className="rounded-md border border-warning/25 bg-warning/10 px-3 py-2 text-sm leading-6 text-text-secondary">{warning}</li>)}</ol></section>}{errors.length > 0 && <section aria-labelledby="parser-errors"><h3 id="parser-errors" className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-danger"><CircleX aria-hidden="true" className="size-4" />Parser errors · {errors.length}</h3><ol className="mt-2 space-y-2">{errors.map((error, index) => <li key={`${index}-${error}`} className="rounded-md border border-danger/25 bg-danger/10 px-3 py-2 text-sm leading-6 text-text-secondary">{error}</li>)}</ol></section>}</div>
+}

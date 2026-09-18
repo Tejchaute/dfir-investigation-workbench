@@ -1,3 +1,14 @@
-// Future cases, evidence, timeline, findings, and reports clients belong in this module boundary.
-export { ApiError, apiBaseUrl, apiRequest } from './client'
-
+export { ApiError, apiBaseUrl, apiClient } from './client'
+export type { ApiErrorDetail, ApiErrorPayload, ApiValidationIssue, DownloadedFile, QueryParameters, QueryValue, RequestOptions } from './client'
+export { evidenceApi } from './evidence'
+export type { EvidenceListParameters } from './evidence'
+export { artifactApi } from './artifacts'
+export type { ArtifactListParameters, ArtifactRecordListParameters } from './artifacts'
+export { timelineApi } from './timeline'
+export type { TimelineListParameters } from './timeline'
+export { correlationApi } from './correlation'
+export type { CorrelationListParameters } from './correlation'
+export { findingApi } from './findings'
+export type { FindingListParameters } from './findings'
+export { reportApi } from './reports'
+export type { ReportListParameters } from './reports'
